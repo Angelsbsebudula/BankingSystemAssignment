@@ -1,32 +1,30 @@
 public class BankTest {
     public static void main(String[] args) {
-        IndividualCustomer cust1 = new IndividualCustomer(1, "John Doe", "Gaborone", "John", "Doe", "ABC Ltd");
-        CompanyCustomer cust2 = new CompanyCustomer(2, "ABC Ltd", "Francistown", "ABC Ltd", "Mary Smith");
+        // Setup
+        IndividualCustomer customer = new IndividualCustomer("C001", "Angie", "Bee", "123 Honeycomb Lane", "Software Developer");
 
-        SavingsAccount savings = new SavingsAccount("S001", 1000, "Main Branch", cust1);
-        InvestmentAccount invest = new InvestmentAccount("I001", 5000, "Main Branch", cust2);
-        ChequeAccount cheque = new ChequeAccount("C001", 200, "Main Branch", cust1, 500);
+        // Quick tests
+        SavingsAccount savings = new SavingsAccount("SA001", 1500.0, "Gaborone Branch", customer);
+        InvestmentAccount investment = new InvestmentAccount("IA001", 800.0, "Gaborone Branch", customer);
+        ChequeAccount cheque = new ChequeAccount("CA001", 3000.0, "Gaborone Branch", customer, 1200.0);
 
-        cust1.openAccount(savings);
-        cust1.openAccount(cheque);
-        cust2.openAccount(invest);
+        // Test deposits
+        savings.deposit(200.0);
+        investment.deposit(400.0);
+        cheque.deposit(1000.0);
 
-        System.out.println("\n--- Initial Balances ---");
-        System.out.println("Savings: " + savings.getBalance());
-        System.out.println("Investment: " + invest.getBalance());
-        System.out.println("Cheque: " + cheque.getBalance());
+        // Test withdrawals
+        savings.withdraw(100.0);  // Should fail (no withdrawals allowed)
+        investment.withdraw(300.0); // Should succeed
+        cheque.withdraw(4500.0); // Should succeed with overdraft
 
-        savings.deposit(200);
-        invest.withdraw(300);
-        cheque.withdraw(600);
-
+        // Test interest
         savings.applyInterest();
-        invest.applyInterest();
-        cheque.applyInterest();
+        investment.applyInterest();
 
-        System.out.println("\n--- Final Balances ---");
-        System.out.println("Savings: " + savings.getBalance());
-        System.out.println("Investment: " + invest.getBalance());
-        System.out.println("Cheque: " + cheque.getBalance());
+        // Show results
+        System.out.println("Angie Bee's Savings: BWP " + savings.getBalance());
+        System.out.println("Angie Bee's Investment: BWP " + investment.getBalance());
+        System.out.println("Angie Bee's Cheque: BWP " + cheque.getBalance());
     }
 }

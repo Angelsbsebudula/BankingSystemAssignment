@@ -1,27 +1,38 @@
-import java.util.ArrayList;
-
 public abstract class Customer {
-    protected int customerID;
-    protected String name;
-    protected String address;
-    protected ArrayList<Account> accounts;
+    private String customerID;
+    private String name;
+    private String address;
 
-    public Customer(int customerID, String name, String address) {
+    public Customer(String customerID, String name, String address) {
         this.customerID = customerID;
         this.name = name;
         this.address = address;
-        accounts = new ArrayList<>();
     }
 
-    public void openAccount(Account account) {
-        accounts.add(account);
+    // Getters and Setters
+    public String getCustomerID() {
+        return customerID;
     }
 
-    public void showCustomerInfo() {
-        System.out.println("Customer ID: " + customerID);
-        System.out.println("Name: " + name);
-        System.out.println("Address: " + address);
-        System.out.println("Accounts owned: " + accounts.size());
+    public void setCustomerID(String customerID) {
+        this.customerID = customerID;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public abstract String getCustomerType();
 }
-
