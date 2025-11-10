@@ -1,631 +1,373 @@
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import java.util.HashMap;
+import javafx.collections.*;
+import javafx.beans.property.*;
+import java.util.*;
 
 public class MainController {
 
-    // Login Tab
-    @FXML private TextField txtUsername, txtPassword;
-    @FXML private Button btnLogin, btnRegister;
-    @FXML private Button btnLogout;
-    
-    //CREATE CUSTOMER TAB
-    @FXML private TextField txtFirstName, txtLastName, txtAddress, txtOccupation;
-    @FXML private Button btnCreateCustomer;
-    @FXML private ComboBox<String> cmbCustomerAccountType;
-    @FXML private ComboBox<String> cmbCustomerBranch;
-
-    // Account Tab  
-    @FXML private TextField txtAccountNumber, txtBalance, txtCustomerID;
-    @FXML private ComboBox<String> cmbAccountType, cmbBranch;
-    @FXML private TableView<Account> tableViewAccounts;
-    @FXML private TableColumn<Account, String> colAccNumber;
-    @FXML private TableColumn<Account, Double> colBalance;
-    @FXML private TableColumn<Account, String> colAccType;
-    @FXML private TableColumn<Account, String> colBranch;
-    @FXML private TableColumn<Account, String> colCustomerID;
-    @FXML private Button btnInsert, btnDelete, btnUpdate, btnSearch, btnList;
-
-    // Deposit/Withdraw Tab
-    @FXML private TextField txtTransAccountNumber, txtTransAmount;
-    @FXML private Button btnWithdraw, btnDeposit;
-
-    // Transaction Tab
-    @FXML private TableView<Transaction> transactionTable;
-    @FXML private TableColumn<Transaction, String> colTransAccNumber;
-    @FXML private TableColumn<Transaction, String> colTransAccountType;
-    @FXML private TableColumn<Transaction, Double> colTransAmount;
-    @FXML private TableColumn<Transaction, String> colTransType;
-    @FXML private TableColumn<Transaction, String> colTransDate;
-
-    // TabPane for controlling tabs
     @FXML private TabPane tabPane;
 
-    private HashMap<String, User> users = new HashMap<>();
-    private HashMap<String, Customer> customers = new HashMap<>();
-    private HashMap<String, Account> accounts = new HashMap<>();
-    private ObservableList<Account> accountList = FXCollections.observableArrayList();
+    // === GENERAL BUTTONS AND FIELDS ===
+    @FXML private Button btnLogin, btnLogout, btnInsert, btnDeposit, btnWithdraw;
+    @FXML private Button btnApplySavingsInterest, btnApplyInvestmentInterest, btnApplyAllInterest;
+    @FXML private TextField txtFilterAccount;
+    @FXML private Button btnFilter;
+    @FXML private TableView<Transaction> transactionTable;
+    @FXML private TableColumn<Transaction, String> colTransAccNumber, colTransType, colTransDate;
+    @FXML private TableColumn<Transaction, Double> colTransAmount;
     private ObservableList<Transaction> transactionList = FXCollections.observableArrayList();
-    private User currentUser;
-    
-     public MainController() {
-        System.out.println("=== DEBUG: Constructor called ===");
-        // Manually call initialize since @FXML initialize isn't working
-        javafx.application.Platform.runLater(() -> {
-            System.out.println("=== DEBUG: Manual initialize called ===");
-            initializeManually();
-        });
-    }
-    
-    private void initializeManually() {
-        System.out.println("=== DEBUG: Manual initialize started ===");
-        System.out.println("DEBUG: tabPane is null: " + (tabPane == null));
-        
-        if (tabPane != null) {
-            System.out.println("DEBUG: Number of tabs: " + tabPane.getTabs().size());
-            for (int i = 0; i < tabPane.getTabs().size(); i++) {
-                System.out.println("DEBUG: Tab " + i + " - " + tabPane.getTabs().get(i).getText());
-            }
-            
-            // Setup your components
-            cmbAccountType.getItems().addAll("Savings", "Cheque", "Investment");
-            cmbBranch.getItems().addAll("Gaborone", "Francistown");
-            cmbCustomerAccountType.getItems().addAll("Savings", "Cheque", "Investment");
-            cmbCustomerBranch.getItems().addAll("Gaborone", "Francistown");
-            setupAccountTable();
-            setupTransactionTable();
-            setupTestData();
-            disableAllTabsExceptLogin();
-            
-        } else {
-            System.out.println("ERROR: tabPane is still null!");
-        }
-        
-        System.out.println("=== DEBUG: Manual initialize completed ===");
-    }
 
+    // === LOGIN ===
+    @FXML private TextField txtUsername;
+    @FXML private PasswordField txtPassword;
+
+    // === CUSTOMER REGISTRATION ===
+    @FXML private TextField txtFirstName, txtLastName, txtAddress, txtOccupation;
+    @FXML private ComboBox<String> cmbCustAccountType, cmbCustBranch;
+    @FXML private Button btnCreateCustomer;
+
+    // === ACCOUNT MANAGEMENT ===
+    @FXML private TextField txtAccountNumber, txtBalance, txtCustomerID;
+    @FXML private ComboBox<String> cmbAccAccountType, cmbAccBranch;
+    @FXML private TableView<Account> tableViewAccounts;
+    @FXML private TableColumn<Account, String> colAccNumber, colAccType, colBranch, colCustomerID;
+    @FXML private TableColumn<Account, Double> colBalance;
+
+    // === TRANSACTIONS ===
+    @FXML private TextField txtTransAccountNumber, txtTransAmount;
+    @FXML private Label lblTransResult;
+
+    // === INTEREST ===
+    @FXML private TableView<BankSystem.InterestResult> tblInterestResults;
+    @FXML private TableColumn<BankSystem.InterestResult, String> colIntAccount, colIntType;
+    @FXML private TableColumn<BankSystem.InterestResult, Double> colIntInterest;
+    @FXML private Label lblInterestResult;
+
+    private BankSystem bankSystem;
+    private ObservableList<Account> accountList = FXCollections.observableArrayList();
+    private ObservableList<BankSystem.InterestResult> interestResults = FXCollections.observableArrayList();
 
     @FXML
-public void initialize() {
-       
-    if (tabPane != null) {
-        System.out.println("DEBUG: Number of tabs: " + tabPane.getTabs().size());
-        // Print tab names for debugging
-        for (int i = 0; i < tabPane.getTabs().size(); i++) {
-            System.out.println("DEBUG: Tab " + i + " - " + tabPane.getTabs().get(i).getText());
-        }
-    } else {
-        System.out.println("ERROR: tabPane is null in initialize() - FXML injection failed!");
-        // Don't continue with setup if tabPane is null
-        return;
+    public void initialize() {
+        bankSystem = new BankSystem();
+        bankSystem.loadUsersFromFile();
+
+        cmbCustAccountType.setItems(FXCollections.observableArrayList("Savings", "Cheque", "Investment"));
+        cmbCustBranch.setItems(FXCollections.observableArrayList("Gaborone", "Francistown", "Maun", "Palapye"));
+        cmbAccAccountType.setItems(FXCollections.observableArrayList("Savings", "Cheque", "Investment"));
+        cmbAccBranch.setItems(FXCollections.observableArrayList("Gaborone", "Francistown", "Maun", "Palapye"));
+
+        setupAccountTable();
+        setupInterestTable();
+        setupTransactionTable();
+        refreshTransactions();
+        disableAllTabsExceptLogin();
     }
-    
-    // Only setup the rest if tabPane is working
-    System.out.println("DEBUG: Setting up application components...");
-    
-    // Setup comboboxes
-    cmbAccountType.getItems().addAll("Savings", "Cheque", "Investment");
-    cmbBranch.getItems().addAll("Gaborone", "Francistown");
-    
-    cmbCustomerAccountType.getItems().addAll("Savings", "Cheque", "Investment");
-    cmbCustomerBranch.getItems().addAll("Gaborone", "Francistown");
-    
-    // Setup account table
-    setupAccountTable();
-    
-    // Setup transaction table
-    setupTransactionTable();
-    
-    // Create test data - INCLUDING ANGIE BEE!
-    setupTestData();
-    
-    // Start with only login enabled
-    disableAllTabsExceptLogin();
-    
-    System.out.println("DEBUG: Initialize completed successfully");
-}
-   
+
+    // === LOGIN ===
+    @FXML
+    private void handleLogin() {
+        String username = txtUsername.getText().trim();
+        String password = txtPassword.getText().trim();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            showAlert("Error", "Please enter username and password.");
+            return;
+        }
+
+        boolean success = bankSystem.authenticateUser(username, password);
+        if (success) {
+            User currentUser = bankSystem.getCurrentUser();
+
+            if (currentUser.isTeller()) {
+                showAlert("Login Successful", "Welcome Teller!");
+            } else {
+                showCustomerAccountInfo(currentUser);
+            }
+            onUserLoggedIn();
+        } else {
+            showAlert("Login Failed", "Invalid username or password.");
+        }
+    }
+
+    @FXML
+    private void handleLogout() {
+        bankSystem.logout();
+        showAlert("Logout", "You have been logged out successfully.");
+        disableAllTabsExceptLogin();
+        tabPane.getSelectionModel().select(0);
+        btnLogout.setDisable(true);
+    }
+
+    private void onUserLoggedIn() {
+        User currentUser = bankSystem.getCurrentUser();
+
+        for (Tab tab : tabPane.getTabs()) {
+            String tabName = tab.getText();
+
+            if (currentUser.isTeller()) {
+                tab.setDisable(tabName.equals("Login"));
+            } else {
+                boolean allowed = tabName.equals("Login") || tabName.equals("Transactions") || tabName.equals("Transaction History");
+                tab.setDisable(!allowed);
+            }
+        }
+
+        if (currentUser.isTeller()) {
+            tabPane.getSelectionModel().select(1);
+        } else {
+            tabPane.getSelectionModel().select(3);
+        }
+
+        btnLogout.setDisable(false);
+        refreshAccounts();
+    }
+
+    private void showCustomerAccountInfo(User loggedUser) {
+        String customerID = loggedUser.getCustomerID();
+        String accounts = bankSystem.getAccountsByCustomerID(customerID);
+        showAlert("Login Successful",
+                "Welcome, " + loggedUser.getUsername() + "!\n\n" +
+                "Customer ID: " + customerID + "\n" +
+                "Account Number(s): " + accounts);
+    }
+
+    // === CUSTOMER REGISTRATION ===
+    @FXML
+    private void handleCreateCustomer() {
+        try {
+            String firstName = txtFirstName.getText().trim();
+            String lastName = txtLastName.getText().trim();
+            String address = txtAddress.getText().trim();
+            String occupation = txtOccupation.getText().trim();
+            String accountType = cmbCustAccountType.getValue();
+            String branch = cmbCustBranch.getValue();
+
+            if (firstName.isEmpty() || lastName.isEmpty() || address.isEmpty() || occupation.isEmpty()
+                    || accountType == null || branch == null) {
+                showAlert("Error", "Please fill in all fields.");
+                return;
+            }
+            
+            String result = bankSystem.createCustomer(firstName, lastName, address, occupation, accountType, branch);
+            showAlert("Success", result);
+            clearCustomerForm();
+
+        } catch (Exception e) {
+            showAlert("Error", "Failed to create customer: " + e.getMessage());
+        }
+    }
+
+    // === ACCOUNT CREATION ===
+    @FXML
+    private void handleInsert() {
+        try {
+            String accNum = txtAccountNumber.getText().trim();
+            String custID = txtCustomerID.getText().trim();
+            String accType = cmbAccAccountType.getValue();
+            String branch = cmbAccBranch.getValue();
+            String balanceText = txtBalance.getText().trim();
+
+            if (accNum.isEmpty() || custID.isEmpty() || accType == null || branch == null || balanceText.isEmpty()) {
+                showAlert("Error", "Please fill in all fields before adding an account.");
+                return;
+            }
+
+            double balance = Double.parseDouble(balanceText);
+
+            bankSystem.createAccount(accNum, accType, balance, branch, custID);
+            refreshAccounts();
+            showAlert("Success", "Account created successfully!");
+            
+            // Clear form after success
+            txtAccountNumber.clear();
+            txtCustomerID.clear();
+            txtBalance.clear();
+            cmbAccAccountType.setValue(null);
+            cmbAccBranch.setValue(null);
+            
+        } catch (NumberFormatException e) {
+            showAlert("Error", "Please enter a valid number for balance.");
+        } catch (Exception e) {
+            showAlert("Error", "Failed to create account: " + e.getMessage());
+        }
+    }
+
+    // === TRANSACTIONS ===
+    @FXML private void handleDeposit() { processTransaction("Deposit"); }
+    @FXML private void handleWithdraw() { processTransaction("Withdraw"); }
+
+    private void processTransaction(String type) {
+        try {
+            String accNum = txtTransAccountNumber.getText().trim();
+            if (accNum.isEmpty()) {
+                showResult("Please enter account number", false);
+                return;
+            }
+            
+            String amountText = txtTransAmount.getText().trim();
+            if (amountText.isEmpty()) {
+                showResult("Please enter amount", false);
+                return;
+            }
+            
+            double amount = Double.parseDouble(amountText);
+            if (amount <= 0) {
+                showResult("Amount must be positive", false);
+                return;
+            }
+
+            // Get current user and validate account ownership
+            User currentUser = bankSystem.getCurrentUser();
+            if (currentUser == null) {
+                showResult("Please login first", false);
+                return;
+            }
+
+            // If customer, verify they own this account
+            if (!currentUser.isTeller()) {
+                String customerAccounts = bankSystem.getAccountsByCustomerID(currentUser.getCustomerID());
+                // FIX: Split the space-separated accounts and check if the entered account is in the list
+                String[] ownedAccounts = customerAccounts.split(" ");
+                boolean ownsAccount = false;
+                for (String ownedAcc : ownedAccounts) {
+                    if (ownedAcc.equals(accNum)) {
+                        ownsAccount = true;
+                        break;
+                    }
+                }
+                if (!ownsAccount) {
+                    showResult("Access denied: You don't own this account", false);
+                    return;
+                }
+            }
+
+            boolean success = type.equals("Deposit")
+                    ? bankSystem.deposit(accNum, amount)
+                    : bankSystem.withdraw(accNum, amount);
+
+            showResult(success ? type + " successful!" : type + " failed!", success);
+            
+            if (success) {
+                txtTransAccountNumber.clear();
+                txtTransAmount.clear();
+                refreshAccounts();
+                refreshTransactions();
+            }
+            
+        } catch (NumberFormatException e) {
+            showResult("Please enter a valid number", false);
+        } catch (Exception e) {
+            showResult("Error: " + e.getMessage(), false);
+        }
+    }
+
+    // === INTEREST ===
+    @FXML private void handleApplySavingsInterest() { applyInterest("Savings"); }
+    @FXML private void handleApplyInvestmentInterest() { applyInterest("Investment"); }
+    @FXML private void handleApplyAllInterest() { applyInterest("All"); }
+
+    private void applyInterest(String type) {
+        // Add confirmation dialog
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Apply Interest");
+        confirm.setHeaderText("Apply " + type + " Interest?");
+        confirm.setContentText("This will modify account balances. Continue?");
+        
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            List<BankSystem.InterestResult> results = bankSystem.applyInterest(type);
+            interestResults.setAll(results);
+            showInterestResult(
+                    results.isEmpty() ? "No eligible accounts." : "Applied interest to " + results.size() + " accounts.",
+                    !results.isEmpty()
+            );
+            refreshAccounts();
+        }
+    }
+
+    // === TRANSACTION HISTORY ===
+    @FXML
+    private void handleFilter() {
+        String filter = txtFilterAccount.getText().trim().toLowerCase();
+        if (filter.isEmpty()) {
+            transactionTable.setItems(transactionList);
+        } else {
+            ObservableList<Transaction> filtered = FXCollections.observableArrayList();
+            for (Transaction t : transactionList) {
+                if (t.getAccountNumber().toLowerCase().contains(filter)) {
+                    filtered.add(t);
+                }
+            }
+            transactionTable.setItems(filtered);
+        }
+    }
+
+    // === TABLE SETUP ===
     private void setupAccountTable() {
-        // Link table columns to account properties
-        colAccNumber.setCellValueFactory(cellData -> {
-            try {
-                return new javafx.beans.property.SimpleStringProperty(cellData.getValue().getAccountNumber());
-            } catch (Exception e) {
-                return new javafx.beans.property.SimpleStringProperty("Error");
-            }
-        });
-        
-        colBalance.setCellValueFactory(cellData -> {
-            try {
-                return new javafx.beans.property.SimpleDoubleProperty(cellData.getValue().getBalance()).asObject();
-            } catch (Exception e) {
-                return new javafx.beans.property.SimpleDoubleProperty(0.0).asObject();
-            }
-        });
-        
-        colAccType.setCellValueFactory(cellData -> {
-            try {
-                String type = cellData.getValue().getClass().getSimpleName();
-                return new javafx.beans.property.SimpleStringProperty(type.replace("Account", ""));
-            } catch (Exception e) {
-                return new javafx.beans.property.SimpleStringProperty("Unknown");
-            }
-        });
-        
-        colBranch.setCellValueFactory(cellData -> {
-            try {
-                return new javafx.beans.property.SimpleStringProperty(cellData.getValue().getBranch());
-            } catch (Exception e) {
-                return new javafx.beans.property.SimpleStringProperty("Unknown");
-            }
-        });
-        
-        colCustomerID.setCellValueFactory(cellData -> {
-            try {
-                return new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCustomer().getCustomerID());
-            } catch (Exception e) {
-                return new javafx.beans.property.SimpleStringProperty("Unknown");
-            }
-        });
-        
-        // Connect the observable list to table
+        colAccNumber.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getAccountNumber()));
+        colBalance.setCellValueFactory(c -> new SimpleDoubleProperty(c.getValue().getBalance()).asObject());
+        colAccType.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getClass().getSimpleName().replace("Account", "")));
+        colBranch.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getBranch()));
+        colCustomerID.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getCustomer().getCustomerID()));
         tableViewAccounts.setItems(accountList);
     }
 
+    private void setupInterestTable() {
+        colIntAccount.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getAccountNumber()));
+        colIntType.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getAccountType()));
+        colIntInterest.setCellValueFactory(c -> new SimpleDoubleProperty(c.getValue().getInterestAmount()).asObject());
+        tblInterestResults.setItems(interestResults);
+    }
+
     private void setupTransactionTable() {
-        colTransAccNumber.setCellValueFactory(cellData -> cellData.getValue().accountNumberProperty());
-        colTransAccountType.setCellValueFactory(cellData -> cellData.getValue().accountTypeProperty());
-        colTransAmount.setCellValueFactory(cellData -> cellData.getValue().amountProperty().asObject());
-        colTransType.setCellValueFactory(cellData -> cellData.getValue().typeProperty());
-        colTransDate.setCellValueFactory(cellData -> cellData.getValue().dateProperty());
-        
+        colTransAccNumber.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getAccountNumber()));
+        colTransAmount.setCellValueFactory(c -> new SimpleDoubleProperty(c.getValue().getAmount()).asObject());
+        colTransType.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getType()));
+        colTransDate.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getDate().toString()));
         transactionTable.setItems(transactionList);
     }
 
-    private void setupTestData() {
-        // Create BANK TELLER users
-        users.put("teller", new User("teller", "123"));
-        users.put("manager", new User("manager", "123"));
-        
-        // Create CUSTOMER users - INCLUDING ANGIE BEE!
-        users.put("angie", new User("angie", "123", "C001"));
-        users.put("john", new User("john", "123", "C002"));
-        
-        // Create actual customer records - ANGIE BEE FROM  TEST!
-        Customer angie = new IndividualCustomer("C001", "Angie", "Bee", "123 Honeycomb Lane", "Software Developer");
-        Customer john = new IndividualCustomer("C002", "John", "Doe", "456 Main St", "Engineer");
-        
-        customers.put("C001", angie);
-        customers.put("C002", john);
-        
-        // Create test accounts - ANGIE'S ACCOUNTS FROM  BANKTEST!
-        Account angieSavings = new SavingsAccount("SA001", 1500.0, "Gaborone Branch", angie);
-        Account angieInvestment = new InvestmentAccount("IA001", 800.0, "Gaborone Branch", angie);
-        Account angieCheque = new ChequeAccount("CA001", 3000.0, "Gaborone Branch", angie, 1200.0);
-        
-        Account johnSavings = new SavingsAccount("SA002", 2000.0, "Francistown", john);
-        
-        // Add all accounts to the system
-        accounts.put("SA001", angieSavings);
-        accounts.put("IA001", angieInvestment);
-        accounts.put("CA001", angieCheque);
-        accounts.put("SA002", johnSavings);
-        
-        accountList.addAll(angieSavings, angieInvestment, angieCheque, johnSavings);
+    private void refreshAccounts() {
+        accountList.setAll(bankSystem.getAllAccounts());
     }
 
- private void disableAllTabsExceptLogin() {
-    if (tabPane != null) {
-        // Enable login tab
-        tabPane.getTabs().get(0).setDisable(false);
-        
-        // Disable all other tabs
-        for (int i = 1; i < tabPane.getTabs().size(); i++) {
-            tabPane.getTabs().get(i).setDisable(true);
-        }
+    private void refreshTransactions() {
+        transactionList.setAll(bankSystem.getAllTransactions());
     }
-    
-    // Reset buttons - enable login, disable logout
-    btnLogout.setDisable(true);
-    btnLogin.setDisable(false);
-}
-@FXML 
-private void handleLogin() {
-    String username = txtUsername.getText();
-    String password = txtPassword.getText();
-    
-    User user = users.get(username);
-    
-    if (user != null && user.getPassword().equals(password)) {
-        currentUser = user;
-        showMessage("Welcome " + (user.isTeller() ? "Bank Teller" : "Customer"));
-        setupTabsForUser();
-    } else {
-        showMessage("Wrong username or password");
-    }
-}
-@FXML 
-private void handleLogout() {
-    currentUser = null;
-    txtUsername.clear();
-    txtPassword.clear();
-    disableAllTabsExceptLogin();
-    btnLogout.setDisable(true);
-    btnLogin.setDisable(false);
-    showMessage("Logged out successfully");
-    tabPane.getSelectionModel().select(0); // Go to login tab
-}
-     private void setupTabsForUser() {
-    if (tabPane == null || currentUser == null) return;
-    
-    // First, enable ALL tabs
-    for (Tab tab : tabPane.getTabs()) {
-        tab.setDisable(false);
-    }
-    
-    if (currentUser.isCustomer()) {
-        // Customer: Only Deposit/Withdraw and Transactions enabled
-        tabPane.getTabs().get(1).setDisable(true); // Account Management ❌
-        tabPane.getSelectionModel().select(2); // Go to deposit/withdraw
-        
-    } else if (currentUser.isTeller()) {
-        // Teller: All tabs except Login enabled
-        tabPane.getTabs().get(0).setDisable(true); // Login ❌ only
-        tabPane.getSelectionModel().select(1); // Go to account management
-    }
-    
-    // Enable logout button and disable login button after successful login
-    btnLogout.setDisable(false);
-    btnLogin.setDisable(true);
-}
-    @FXML 
-    private void handleRegister() {
-        showMessage("See bank teller to register");
-    }
-    @FXML 
-private void handleCreateCustomer() {
-    System.out.println("=== DEBUG: handleCreateCustomer called ===");
-    
-    try {
-        String firstName = txtFirstName.getText();
-        String lastName = txtLastName.getText();
-        String address = txtAddress.getText();
-        String occupation = txtOccupation.getText();
-        
-        System.out.println("DEBUG: Fields - " + firstName + ", " + lastName + ", " + address + ", " + occupation);
-        
-        if (firstName.isEmpty() || lastName.isEmpty() || address.isEmpty() || occupation.isEmpty()) {
-            showMessage("Please fill all customer details");
-            return;
-        }
-        
-        // Generate unique customer ID
-        String customerID = "C" + (customers.size() + 1000);
-        System.out.println("DEBUG: Generated customerID: " + customerID);
-        
-        // Generate username
-        String username = firstName.toLowerCase() + lastName.toLowerCase().charAt(0);
-        System.out.println("DEBUG: Generated username: " + username);
-        
-        // Default password
-        String password = "123";
-        
-        System.out.println("DEBUG: About to create IndividualCustomer...");
-        
-        // Create new customer
-        Customer newCustomer = new IndividualCustomer(customerID, firstName, lastName, address, occupation);
-        System.out.println("DEBUG: Customer created successfully");
-        
-        User newUser = new User(username, password, customerID);
-        System.out.println("DEBUG: User created successfully");
-        // === CREATE ACCOUNT BASED ON CUSTOMER'S SELECTION ===
-           String selectedAccountType = cmbCustomerAccountType.getValue();
-           String selectedBranch = cmbCustomerBranch.getValue();
-           String accountNumber = generateAccountNumber(selectedAccountType);
-          
-// === Handle Investment account minimum balance ===
-double openingBalance = 0.0;
-if ("Investment".equals(selectedAccountType)) {
-    openingBalance = 500.0; // Minimum for investment accounts
-}
-Account newAccount = createAccount(selectedAccountType, accountNumber, openingBalance, selectedBranch, newCustomer);
-           System.out.println("DEBUG: Account created: " + accountNumber + " (" + selectedAccountType + ")");
 
-         // Add to system
-        customers.put(customerID, newCustomer);
-         users.put(username, newUser);
-         accounts.put(accountNumber, newAccount);
-        accountList.add(newAccount);
-
-       // SAVE TO FILES - USING CUSTOMER'S SELECTIONS
-        saveCustomerToFile(customerID, firstName, lastName, address, occupation, username);
-       saveAccountToFile(accountNumber, selectedAccountType, openingBalance, selectedBranch, customerID);
-             
-        System.out.println("DEBUG: Added to system - customers: " + customers.size() + 
-                          ", users: " + users.size() + ", accounts: " + accounts.size());
-        
-        // Clear fields
+    private void clearCustomerForm() {
         txtFirstName.clear();
         txtLastName.clear();
         txtAddress.clear();
         txtOccupation.clear();
-        
-        // === SHOW ACCOUNT NUMBER TO USER ===
-        showMessage("Customer created successfully!\n" +
-                   "Username: " + username + "\n" +
-                   "Password: 123\n" +
-                   "Customer ID: " + customerID + "\n" +
-                   "Account Number: " + accountNumber + "\n" +
-                   "Use this account number for deposits/withdrawals!");
-        
-    } catch (Exception e) {
-        System.out.println("ERROR in handleCreateCustomer: " + e.getMessage());
-        e.printStackTrace();
-        showMessage("Error creating customer: " + e.getMessage());
-    }
-}    
-          @FXML 
-    private void handleInsert() {
-        if (!isTeller()) return;
-        
-        try {
-            String accNum = txtAccountNumber.getText();
-            double balance = Double.parseDouble(txtBalance.getText());
-            String type = cmbAccountType.getValue();
-            String branch = cmbBranch.getValue();
-            String custID = txtCustomerID.getText();
-            
-            if (accNum.isEmpty() || custID.isEmpty() || type == null || branch == null) {
-                showMessage("Fill all fields");
-                return;
-            }
-            
-            if (accounts.containsKey(accNum)) {
-                showMessage("Account number already exists");
-                return;
-            }
-            
-            Customer customer = customers.get(custID);
-            if (customer == null) {
-                showMessage("Customer " + custID + " not found. Use C001 or C002 for testing.");
-                return;
-            }
-            
-            Account newAccount = createAccount(type, accNum, balance, branch, customer);
-            accounts.put(accNum, newAccount);
-            accountList.add(newAccount); // Add to table
-            // SAVE ACCOUNT TO FILE
-            saveAccountToFile(accNum, type, balance, branch, custID);
-            
-            showMessage(type + " account created successfully");
-            clearFields();
-            
-        } catch (NumberFormatException e) {
-            showMessage("Enter valid balance amount");
-        } catch (Exception e) {
-            showMessage("Error: " + e.getMessage());
-        }
+        cmbCustAccountType.setValue(null);
+        cmbCustBranch.setValue(null);
     }
 
-    private Account createAccount(String type, String num, double balance, String branch, Customer cust) {
-        switch (type) {
-            case "Savings": return new SavingsAccount(num, balance, branch, cust);
-            case "Cheque": return new ChequeAccount(num, balance, branch, cust, 1000.0);
-            case "Investment": return new InvestmentAccount(num, balance, branch, cust);
-            default: throw new RuntimeException("Unknown account type");
-        }
-    }
-
-    @FXML 
-    private void handleDelete() {
-        if (!isTeller()) return;
-        
-        Account selectedAccount = tableViewAccounts.getSelectionModel().getSelectedItem();
-        if (selectedAccount == null) {
-            showMessage("Select an account to delete");
-            return;
-        }
-        
-        accounts.remove(selectedAccount.getAccountNumber());
-        accountList.remove(selectedAccount);
-        showMessage("Account deleted");
-    }
-
-    @FXML 
-    private void handleUpdate() {
-        if (!isTeller()) return;
-        
-        Account selectedAccount = tableViewAccounts.getSelectionModel().getSelectedItem();
-        if (selectedAccount == null) {
-            showMessage("Select an account to update");
-            return;
-        }
-        
-        // For now, just show current details
-        txtAccountNumber.setText(selectedAccount.getAccountNumber());
-        txtBalance.setText(String.valueOf(selectedAccount.getBalance()));
-        txtCustomerID.setText(selectedAccount.getCustomer().getCustomerID());
-        showMessage("Edit details and click Insert to update");
-    }
-
-    @FXML 
-    private void handleSearch() {
-        String searchTerm = txtAccountNumber.getText();
-        if (searchTerm.isEmpty()) {
-            showMessage("Enter account number to search");
-            return;
-        }
-        
-        Account account = accounts.get(searchTerm);
-        if (account != null) {
-            // Select the account in table
-            tableViewAccounts.getSelectionModel().select(account);
-            tableViewAccounts.scrollTo(account);
-            showMessage("Account found: " + account.getAccountNumber());
-        } else {
-            showMessage("Account not found");
-        }
-    }
-
-    @FXML 
-    private void handleList() {
-        // Table automatically shows all accounts from accountList
-        showMessage("Showing " + accountList.size() + " accounts");
-    }
-
-    @FXML 
-    private void handleWithdraw() {
-        processTransaction("Withdraw");
-    }
-
-    @FXML 
-    private void handleDeposit() {
-        processTransaction("Deposit");
-    }
-
-    private void processTransaction(String type) {
-        try {
-            String accNum = txtTransAccountNumber.getText();
-            double amount = Double.parseDouble(txtTransAmount.getText());
-            
-            Account account = accounts.get(accNum);
-            if (account == null) {
-                showMessage("Account not found");
-                return;
-            }
-            
-            if (!canAccessAccount(account)) {
-                showMessage("You can't access this account");
-                return;
-            }
-            
-            boolean success = false;
-            if ("Deposit".equals(type)) {
-                success = account.deposit(amount);
-            } else {
-                success = account.withdraw(amount);
-            }
-            
-            if (success) {
-                // Refresh table to show updated balance
-                tableViewAccounts.refresh();
-                
-                // Add to transaction history
-               String accountType = account.getClass().getSimpleName().replace("Account", "");
-                Transaction transaction = new Transaction(accNum, amount, type, accountType);
-                  transactionList.add(transaction);  
-                  // SAVE TRANSACTION TO FILE
-               saveTransactionToFile(accNum, amount, type, accountType);   
-                          
-                showMessage(type + " successful! Balance: BWP " + account.getBalance());
-                txtTransAmount.clear();
-            } else {
-                showMessage(type + " failed");
-            }
-            
-        } catch (Exception e) {
-            showMessage("Enter valid amount");
-        }
-    }
-
-    private boolean canAccessAccount(Account account) {
-        if (currentUser.isTeller()) return true;
-        if (currentUser.isCustomer()) {
-            return account.getCustomer().getCustomerID().equals(currentUser.getCustomerID());
-        }
-        return false;
-    }
-
-    private boolean isTeller() {
-        if (currentUser == null || !currentUser.isTeller()) {
-            showMessage("Tellers only");
-            return false;
-        }
-        return true;
-    }
-
-    private void showMessage(String text) {
+    // === ALERT + LABEL HELPERS ===
+    private void showAlert(String t, String m) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Bank System");
+        alert.setTitle(t);
         alert.setHeaderText(null);
-        alert.setContentText(text);
+        alert.setContentText(m);
         alert.showAndWait();
     }
 
-    private void clearFields() {
-        txtAccountNumber.clear();
-        txtBalance.clear();
-        txtCustomerID.clear();
-        cmbAccountType.setValue(null);
-        cmbBranch.setValue(null);
-    }
-        // ===  FILE SAVING METHODS ===
-
-    private void saveCustomerToFile(String customerID, String firstName, String lastName, String address, String occupation, String username) {
-        try {
-            java.io.FileWriter writer = new java.io.FileWriter("customers.txt", true); // true for append mode
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
-            String timestamp = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            
-            String record = String.format("CUSTOMER|%s|%s|%s|%s|%s|%s|%s%n", 
-                timestamp, customerID, firstName, lastName, address, occupation, username);
-            
-            writer.write(record);
-            writer.close();
-            System.out.println("DEBUG: Customer saved to file: " + customerID);
-            
-        } catch (Exception e) {
-            System.out.println("ERROR saving customer to file: " + e.getMessage());
-        }
+    private void showResult(String msg, boolean success) {
+        lblTransResult.setText(msg);
+        lblTransResult.setStyle(success ? "-fx-text-fill: green;" : "-fx-text-fill: red;");
     }
 
-    private void saveTransactionToFile(String accountNumber, double amount, String type, String accountType) {
-        try {
-            java.io.FileWriter writer = new java.io.FileWriter("transactions.txt", true); // true for append mode
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
-            String timestamp = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            
-            String record = String.format("TRANSACTION|%s|%s|%.2f|%s|%s%n", 
-                timestamp, accountNumber, amount, type, accountType);
-            
-            writer.write(record);
-            writer.close();
-            System.out.println("DEBUG: Transaction saved to file: " + accountNumber + " " + type);
-            
-        } catch (Exception e) {
-            System.out.println("ERROR saving transaction to file: " + e.getMessage());
-        }
+    private void showInterestResult(String msg, boolean success) {
+        lblInterestResult.setText(msg);
+        lblInterestResult.setStyle(success ? "-fx-text-fill: green;" : "-fx-text-fill: red;");
     }
 
-    private void saveAccountToFile(String accountNumber, String accountType, double balance, String branch, String customerID) {
-        try {
-            java.io.FileWriter writer = new java.io.FileWriter("accounts.txt", true);
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
-            String timestamp = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            
-            String record = String.format("ACCOUNT|%s|%s|%s|%.2f|%s|%s%n", 
-                timestamp, accountNumber, accountType, balance, branch, customerID);
-            
-            writer.write(record);
-            writer.close();
-            System.out.println("DEBUG: Account saved to file: " + accountNumber);
-            
-        } catch (Exception e) {
-            System.out.println("ERROR saving account to file: " + e.getMessage());
+    private void disableAllTabsExceptLogin() {
+        for (Tab t : tabPane.getTabs()) {
+            t.setDisable(!t.getText().equals("Login"));
         }
-    }
-          // === HELPER METHODS ===
-
-    private String generateAccountNumber(String accountType) {
-        String prefix;
-        switch (accountType) {
-            case "Savings": prefix = "SA"; break;
-            case "Cheque": prefix = "CA"; break;
-            case "Investment": prefix = "IA"; break;
-            default: prefix = "AC";
-        }
-        return prefix + (accounts.size() + 1000);
     }
 }

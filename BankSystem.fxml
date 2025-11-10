@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<TabPane fx:id="tabPane" prefHeight="600.0" prefWidth="800.0" tabClosingPolicy="UNAVAILABLE"
+         xmlns="http://javafx.com/javafx/23.0.1"
+         xmlns:fx="http://javafx.com/fxml/1"
+         fx:controller="MainController">
+
+   <tabs>
+
+      <!-- LOGIN TAB -->
+      <Tab text="Login">
+         <content>
+            <VBox spacing="20" style="-fx-padding: 30;" alignment="CENTER">
+               <Label text="Bank System Login" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+               <VBox spacing="10" maxWidth="300">
+                  <TextField fx:id="txtUsername" promptText="Username"/>
+                  <PasswordField fx:id="txtPassword" promptText="Password"/>
+                  <HBox spacing="10" alignment="CENTER">
+                     <Button fx:id="btnLogin" text="Login" onAction="#handleLogin" defaultButton="true"/>
+                     <Button fx:id="btnLogout" text="Logout" onAction="#handleLogout" disable="true"/>
+                  </HBox>
+               </VBox>
+            </VBox>
+         </content>
+      </Tab>
+
+      <!-- CUSTOMER REGISTRATION TAB -->
+      <Tab text="Customer Registration">
+         <content>
+            <VBox spacing="15" style="-fx-padding: 20;">
+               <Label text="New Customer Registration" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+               <TextField fx:id="txtFirstName" promptText="First Name" maxWidth="300"/>
+               <TextField fx:id="txtLastName" promptText="Last Name" maxWidth="300"/>
+               <TextField fx:id="txtAddress" promptText="Address" maxWidth="300"/>
+               <TextField fx:id="txtOccupation" promptText="Occupation" maxWidth="300"/>
+               <ComboBox fx:id="cmbCustAccountType" promptText="Account Type" maxWidth="300"/>
+               <ComboBox fx:id="cmbCustBranch" promptText="Branch" maxWidth="300"/>
+               <Button fx:id="btnCreateCustomer" text="Create Customer" onAction="#handleCreateCustomer" maxWidth="300"/>
+            </VBox>
+         </content>
+      </Tab>
+
+      <!-- ACCOUNT MANAGEMENT TAB -->
+      <Tab text="Account Management">
+         <content>
+            <VBox spacing="15" style="-fx-padding: 20;">
+               <Label text="Account Management" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+               
+               <!-- Form Section -->
+               <VBox spacing="10" style="-fx-padding: 10; -fx-border-color: lightgray; -fx-border-radius: 5;">
+                  <Label text="Create New Account" style="-fx-font-weight: bold;"/>
+                  <HBox spacing="10">
+                     <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <TextField fx:id="txtAccountNumber" promptText="Account Number" maxWidth="200"/>
+                        <TextField fx:id="txtBalance" promptText="Initial Balance" maxWidth="200"/>
+                        <TextField fx:id="txtCustomerID" promptText="Customer ID" maxWidth="200"/>
+                     </VBox>
+                     <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <ComboBox fx:id="cmbAccAccountType" promptText="Account Type" maxWidth="200"/>
+                        <ComboBox fx:id="cmbAccBranch" promptText="Branch" maxWidth="200"/>
+                        <Button fx:id="btnInsert" text="Add Account" onAction="#handleInsert" maxWidth="200"/>
+                     </VBox>
+                  </HBox>
+               </VBox>
+
+               <!-- Table Section -->
+               <Label text="Existing Accounts" style="-fx-font-weight: bold;"/>
+               <TableView fx:id="tableViewAccounts" VBox.vgrow="ALWAYS">
+                  <columns>
+                     <TableColumn fx:id="colAccNumber" text="Account No" prefWidth="100.0"/>
+                     <TableColumn fx:id="colBalance" text="Balance" prefWidth="100.0"/>
+                     <TableColumn fx:id="colAccType" text="Type" prefWidth="100.0"/>
+                     <TableColumn fx:id="colBranch" text="Branch" prefWidth="100.0"/>
+                     <TableColumn fx:id="colCustomerID" text="Customer ID" prefWidth="100.0"/>
+                  </columns>
+               </TableView>
+            </VBox>
+         </content>
+      </Tab>
+
+      <!-- TRANSACTIONS TAB -->
+      <Tab text="Transactions">
+         <content>
+            <VBox spacing="15" style="-fx-padding: 30;" alignment="CENTER">
+               <Label text="Account Transactions" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+               <TextField fx:id="txtTransAccountNumber" promptText="Account Number" maxWidth="300"/>
+               <TextField fx:id="txtTransAmount" promptText="Amount (BWP)" maxWidth="300"/>
+               <HBox spacing="10">
+                  <Button fx:id="btnDeposit" text="Deposit" onAction="#handleDeposit"/>
+                  <Button fx:id="btnWithdraw" text="Withdraw" onAction="#handleWithdraw"/>
+               </HBox>
+               <Label fx:id="lblTransResult" style="-fx-font-weight: bold;"/>
+            </VBox>
+         </content>
+      </Tab>
+
+      <!-- TRANSACTION HISTORY TAB -->
+      <Tab text="Transaction History">
+         <content>
+            <VBox spacing="15" style="-fx-padding: 20;">
+               <Label text="Transaction History" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+               <HBox spacing="10" alignment="CENTER_LEFT">
+                  <Label text="Filter by Account:"/>
+                  <TextField fx:id="txtFilterAccount" promptText="Account Number" prefWidth="200"/>
+                  <Button fx:id="btnFilter" text="Filter" onAction="#handleFilter"/>
+               </HBox>
+               <TableView fx:id="transactionTable" VBox.vgrow="ALWAYS">
+                  <columns>
+                     <TableColumn fx:id="colTransAccNumber" text="Account No" prefWidth="120.0"/>
+                     <TableColumn fx:id="colTransAmount" text="Amount (BWP)" prefWidth="120.0"/>
+                     <TableColumn fx:id="colTransType" text="Type" prefWidth="100.0"/>
+                     <TableColumn fx:id="colTransDate" text="Date/Time" prefWidth="180.0"/>
+                  </columns>
+               </TableView>
+            </VBox>
+         </content>
+      </Tab>
+
+      <!-- APPLY INTEREST TAB -->
+      <Tab text="Apply Interest">
+         <content>
+            <VBox spacing="15" style="-fx-padding: 30;" alignment="CENTER">
+               <Label text="Apply Monthly Interest" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+               <HBox spacing="10">
+                  <Button fx:id="btnApplySavingsInterest" text="Savings Interest" onAction="#handleApplySavingsInterest"/>
+                  <Button fx:id="btnApplyInvestmentInterest" text="Investment Interest" onAction="#handleApplyInvestmentInterest"/>
+                  <Button fx:id="btnApplyAllInterest" text="All Interest" onAction="#handleApplyAllInterest"/>
+               </HBox>
+               <TableView fx:id="tblInterestResults" prefHeight="200.0" prefWidth="500.0">
+                  <columns>
+                     <TableColumn fx:id="colIntAccount" text="Account" prefWidth="100.0"/>
+                     <TableColumn fx:id="colIntType" text="Type" prefWidth="80.0"/>
+                     <TableColumn fx:id="colIntInterest" text="Interest" prefWidth="80.0"/>
+                  </columns>
+               </TableView>
+               <Label fx:id="lblInterestResult" style="-fx-font-weight: bold;"/>
+            </VBox>
+         </content>
+      </Tab>
+
+   </tabs>
+</TabPane>

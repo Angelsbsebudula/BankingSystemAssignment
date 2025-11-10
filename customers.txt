@@ -1,0 +1,8 @@
+CUSTOMER|2025-11-10T15:04:37.827551400|C1001|umi|net|mogobane|student|C1001
+CUSTOMER|C1001|bless|net|sskb|student|C1001
+C1,block5
+C1,otse e436
+C1,block9
+C4,gnorth
+C6,metsimotlhabe
+C6,mogoditshane

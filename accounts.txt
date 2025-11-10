@@ -1,0 +1,13 @@
+ACCOUNT|2025-11-10T15:04:37.830941800|SA1001|Savings|0.00|Francistown|C1001
+ACCOUNT|SA1001|Savings|0.0|Gaborone|C1001
+A1,Gaborone,C1
+A1,Gaborone,C1
+A1,Francistown,C1
+A1,Francistown,C1
+A1,Gaborone,C1
+A1,Maun,C4,0.0
+A1,Maun,C4,600.0
+A3,Palapye,C6,0.0
+A3,Palapye,C6,600.0
+A5,Maun,C6,500.0
+A5,Maun,C6,500.0
