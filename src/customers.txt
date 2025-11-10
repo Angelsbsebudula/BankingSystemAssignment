@@ -1,2 +1,0 @@
-CUSTOMER|2025-10-31 20:17:43|C1002|Makes|Bakes|Bobonong 123|Teacher|makesb
-CUSTOMER|2025-10-31 20:56:32|C1002|mebakes|kask|bonnington|Student|mebakesk
